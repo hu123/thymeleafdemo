@@ -15,7 +15,12 @@
     <context:component-scan
             base-package="org.huluo"/>
 
-    <mvc:annotation-driven />
+    <mvc:annotation-driven validator="validator" />
+
+    <!--加入Bean校验配置-->
+    <bean id="validator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean">
+        <property name="providerClass" value="org.hibernate.validator.HibernateValidator"/>
+    </bean>
 
 <bean id="templateResolver"
           class="org.thymeleaf.templateresolver.ServletContextTemplateResolver">
@@ -95,5 +100,7 @@
     </bean>
 
 
+
+    <bean class="org.springframework.validation.beanvalidation.BeanValidationPostProcessor"/>
 
 </beans>

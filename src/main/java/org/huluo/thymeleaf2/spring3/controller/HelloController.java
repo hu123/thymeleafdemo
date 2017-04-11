@@ -4,10 +4,13 @@ import org.huluo.thymeleaf2.spring3.entity.Student;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.validation.Valid;
+import java.util.List;
 
 @Controller
 public class HelloController {
@@ -27,11 +30,32 @@ public class HelloController {
     }
 
     @RequestMapping(value = "/student", method = RequestMethod.POST)
-    public String postSayWorld(@Valid Student student, Model model) {
+    public String postSayWorld(@Valid Student student, Model model, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            System.out.println("错误啦");
+            Student errorStudent = new Student();
+            errorStudent.name = "errorinfo";
+            model.addAttribute("student", errorStudent);
+            return "result";
+        }
 
         Student s = new Student();
         s.name = "zhangsan";
         model.addAttribute("student", s);
+        return "result";
+    }
+
+
+    @RequestMapping(value = "/beanValidation")
+    public String beanValidation(@Valid Student student,BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            List<ObjectError> objectErrors = bindingResult.getAllErrors();
+
+            for (ObjectError objectError : objectErrors) {
+                System.out.println(objectError.getObjectName() + "," + objectError.getDefaultMessage());
+            }
+            return "result";
+        }
         return "result";
     }
 
