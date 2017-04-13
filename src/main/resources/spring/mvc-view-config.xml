@@ -15,92 +15,69 @@
     <context:component-scan
             base-package="org.huluo"/>
 
-    <mvc:annotation-driven validator="validator" />
+    <mvc:annotation-driven validator="validator" content-negotiation-manager="contentNegotiationManager" />
 
     <!--加入Bean校验配置-->
     <bean id="validator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean">
         <property name="providerClass" value="org.hibernate.validator.HibernateValidator"/>
     </bean>
 
-<bean id="templateResolver"
-          class="org.thymeleaf.templateresolver.ServletContextTemplateResolver">
-        <property name="prefix" value="/WEB-INF/thymeleaf/" />
-        <property name="suffix" value=".html" />
-        <property name="templateMode" value="HTML5" />
-        <!-- Template cache is set to false (default is true).        -->
-        <property name="cacheable" value="false" />
-    </bean>
+    <!-- 默认的注解映射的支持，org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping -->
+    <mvc:annotation-driven content-negotiation-manager="contentNegotiationManager" >
+        <mvc:message-converters register-defaults="true">
+            <!-- 将StringHttpMessageConverter的默认编码设为UTF-8 -->
+            <bean class="org.springframework.http.converter.StringHttpMessageConverter">
+                <constructor-arg value="UTF-8"/>
+            </bean>
 
 
-    <bean id="templateEngine" class="org.thymeleaf.spring3.SpringTemplateEngine">
-        <property name="templateResolver" ref="templateResolver" />
-    </bean>
 
-    <!--
-   - The ContentNegotiatingViewResolver delegates to the InternalResourceViewResolver and BeanNameViewResolver,
-   - and uses the requested media type (determined by the path extension) to pick a matching view.
-   - When the media type is 'text/html', it will delegate to the InternalResourceViewResolver's JstlView,
-   - otherwise to the BeanNameViewResolver.
-   -->
-    <bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
-        <property name="contentNegotiationManager" ref="cnManager"/>
+        </mvc:message-converters>
+    </mvc:annotation-driven>
 
-        <property name="viewResolvers">
-            <list>
-
-                <!-- Used here for 'xml' and 'atom' views  -->
-                <bean class="org.springframework.web.servlet.view.BeanNameViewResolver">
-                    <property name="order" value="1"/>
-                </bean>
-
-                <bean class="org.thymeleaf.spring3.view.ThymeleafViewResolver">
-                    <property name="templateEngine" ref="templateEngine" />
-                    <property name="order" value="2"/>
-                    <!-- We need to set exclusions because Content Negotiation tries to resolve from -->
-                    <!-- Thymeleaf even if a specific view bean (of a different class) is already    -->
-                    <!-- found, which might cause exceptions (e.g. ThymeleafView does not have a     -->
-                    <!-- 'marshaller' property).                                                     -->
-                    <property name="excludedViewNames" value="*.xml" />
-                </bean>
-
-                <!-- Default viewClass: JSTL view (JSP with html output) -->
-                <!--                 <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver"> -->
-                <!--                     Example: a logical view name of 'vets' is mapped to '/WEB-INF/jsp/vets.jsp' -->
-                <!--                     <property name="prefix" value="/WEB-INF/jsp/"/> -->
-                <!--                     <property name="suffix" value=".jsp"/> -->
-                <!--                     <property name="order" value="3"/> -->
-                <!--                 </bean> -->
-
-            </list>
-        </property>
-    </bean>
-
-
-    <!-- Simple strategy: only path extension is taken into account -->
-    <bean id="cnManager" class="org.springframework.web.accept.ContentNegotiationManagerFactoryBean">
-        <property name="favorPathExtension" value="true"/>
-        <property name="ignoreAcceptHeader" value="true"/>
-        <property name="defaultContentType" value="text/html"/>
-
+    <!-- REST中根据URL后缀自动判定Content-Type及相应的View -->
+    <bean id="contentNegotiationManager" class="org.springframework.web.accept.ContentNegotiationManagerFactoryBean">
         <property name="mediaTypes">
             <map>
-                <entry key="html" value="text/html" />
-                <entry key="xml" value="application/xml" />
-                <entry key="atom" value="application/atom+xml" />
+                <entry key="xml" value="application/xml"/>
+                <entry key="json" value="application/json"/>
             </map>
         </property>
-    </bean>
-
-    <bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
-        <!-- view name resolved using bean of type InternalResourceViewResolver (declared in mvc-view-config.xml) -->
-        <property name="defaultErrorView" value="exception"/>
-        <!-- results into 'WEB-INF/jsp/exception.jsp' -->
-        <property name="warnLogCategory" value="warn"/>
-        <!-- needed otherwise exceptions won't be logged anywhere -->
+        <property name="ignoreAcceptHeader" value="true"/>
+        <property name="favorPathExtension" value="true"/>
     </bean>
 
 
 
-    <bean class="org.springframework.validation.beanvalidation.BeanValidationPostProcessor"/>
+
+
+
+
+    <!-- 双模板引擎 -->
+
+    <bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/jsp/" />
+        <property name="viewNames" value="*.jsp" />
+    </bean>
+    <!-- Thymeleaf -->
+    <bean id="templateResolver" class="org.thymeleaf.templateresolver.ServletContextTemplateResolver">
+        <property name="prefix" value="/WEB-INF/thymeleaf/" />
+        <property name="templateMode" value="HTML5" />
+        <property name="characterEncoding" value="utf-8"/>
+
+    </bean>
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="viewNames" value="redirect*" />
+    </bean>
+    <bean id="templateEngine" class="org.thymeleaf.spring3.SpringTemplateEngine">
+        <property name="templateResolver" ref="templateResolver" />
+
+    </bean>
+    <bean class="org.thymeleaf.spring3.view.ThymeleafViewResolver">
+        <property name="templateEngine" ref="templateEngine" />
+        <property name="viewNames" value="*.html" />
+        <property name="characterEncoding" value="utf-8"/>
+
+    </bean>
 
 </beans>
